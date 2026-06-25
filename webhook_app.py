@@ -8,6 +8,8 @@ from sharepoint import upload_zip_to_sharepoint
 
 load_dotenv()
 
+app = FastAPI()
+
 EMAIL = os.getenv("GURU_EMAIL")
 TOKEN = os.getenv("GURU_TOKEN")
 
