@@ -42,8 +42,7 @@ def upload_zip_to_sharepoint(filename, zip_bytes):
 
     url = {
         f"{GRAPH}/drives/{DRIVE_ID}"
-        f"/root:/{TARGET_FOLDER}/
-        {filename}:/content"
+        f"/root:/{TARGET_FOLDER}/{filename}:/content"
     }
     r = requests.put(url, headers=headers, data=zip_bytes)
 
