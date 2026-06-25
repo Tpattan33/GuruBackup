@@ -43,8 +43,8 @@ def download_guru_export(export_url):
         if not export_url:
             return {
                 "status": "ignored",
-                "reason": "No exportUrl found"
-                "payload": paylod,
+                "reason": "No exportUrl found",
+                "payload": payload,
             }
 
         filename = f"{safe_filename(collection_name)}.zip"
@@ -56,6 +56,5 @@ def download_guru_export(export_url):
         return {
             "status": "uploaded",
             "filename": filename,
-            "sharepoint_id":
-            result.get("id"),
+            "sharepoint_id": result.get("id"),
         }
