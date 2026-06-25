@@ -30,8 +30,7 @@ def get_access_token():
     r = requests.post(url, data=data)
     
     if not r.ok:
-        raise SystemExit(f"Microsoft auth failed: {r.status_code} {r.text}"
-    failed: {r.status_code} {r.text})
+        raise SystemExit(f"Microsoft auth failed: {r.status_code} {r.text}")
 
     return r.json()["access_token"]
 

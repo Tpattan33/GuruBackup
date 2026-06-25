@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 from sharepoint import upload_zip_to_sharepoint
 
-load_dotenv
+load_dotenv()
 
 EMAIL = os.getenv("GURU_EMAIL")
 TOKEN = os.getenv("GURU_TOKEN")
