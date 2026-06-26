@@ -6,8 +6,8 @@ load_dotenv()
 
 GURU_API = "https://api.getguru.com/api/v1"
 
-EMAIL = os.getenv("GURU_EMAIL")
-TOKEN = os.getenv("GURU_TOKEN")
+EMAIL = (os.getenv("GURU_EMAIL") or "").strip()
+TOKEN = (os.getenv("GURU_TOKEN") or "").strip()
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
 def guru_auth():
