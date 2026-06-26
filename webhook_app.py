@@ -21,6 +21,7 @@ def safe_filename(name):
  
 
 def download_guru_export(export_url):
+    print(f"[creds] email={GURU_EMAIL!r} token_len={len(GURU_TOKEN) if GURU_TOKEN else None}")
     if not GURU_EMAIL or not GURU_TOKEN:
         raise RuntimeError(
             "GURU_EMAIL/GURU_TOKEN not set in this service's environment"
