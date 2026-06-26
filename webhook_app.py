@@ -11,8 +11,8 @@ load_dotenv()
 app = FastAPI()
  
 # Match these names to what download_guru_export() actually uses.
-EMAIL = os.getenv("GURU_EMAIL")
-TOKEN = os.getenv("GURU_TOKEN")
+EMAIL = (os.getenv("GURU_EMAIL") or "").strip()
+TOKEN = (os.getenv("GURU_TOKEN") or "").strip()
  
  
 def safe_filename(name):
