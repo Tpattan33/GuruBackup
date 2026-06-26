@@ -19,19 +19,15 @@ def safe_filename(name):
     name = re.sub(r'[<>:"/\\|?*]', "_", name)
     return name.strip() or "guru_export"
  
- 
+
 def download_guru_export(export_url):
-<<<<<<< HEAD
-    # Step 1: hit Guru with auth to get the redirect URL
-=======
     if not EMAIL or not TOKEN:
         raise RuntimeError(
             "EMAIL/TOKEN not set in this service's environment"
             "download will 404. Set them in Render's Environment tab"
         )
-
-    # Guru's exportUrl requires the same Basic auth as the rest of the API.
->>>>>>> 68d56dac13c8367682df822995e257b984b24caa
+        
+    # Step 1: hit Guru with auth to get the redirect URL
     r = requests.get(
         export_url,
         auth=(GURU_EMAIL, GURU_TOKEN),
@@ -50,6 +46,7 @@ def download_guru_export(export_url):
         raise RuntimeError(f"Guru download failed: {r.status_code} {r.text[:200]}")
 
     return r.content
+
  
  
 # --- Routes (must live at module level so FastAPI registers them) ---
