@@ -21,14 +21,24 @@ def safe_filename(name):
  
  
 def download_guru_export(export_url):
-    # Guru's exportUrl requires the same Basic auth as the rest of the API.
+    # Step 1: hit Guru with auth to get the redirect URL
     r = requests.get(
         export_url,
-        auth=(EMAIL, TOKEN),
-        stream=True,
+        auth=(GURU_EMAIL, GURU_TOKEN),
+        allow_redirects=False,  # don't follow automatically
     )
+
+    print(f"[download] step1 status={r.status_code} location={r.headers.get('Location')}")
+
+    # Step 2: if redirected, follow WITHOUT auth (S3 doesn't want it)
+    if r.status_code in (301, 302, 303, 307, 308):
+        s3_url = r.headers["Location"]
+        r = requests.get(s3_url)  # no auth header
+        print(f"[download] step2 status={r.status_code} content-type={r.headers.get('content-type')}")
+
     if not r.ok:
-        raise RuntimeError(f"Guru download failed: {r.status_code} {r.text[:500]}")
+        raise RuntimeError(f"Guru download failed: {r.status_code} {r.text[:200]}")
+
     return r.content
  
  
