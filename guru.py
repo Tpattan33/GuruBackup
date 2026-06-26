@@ -6,17 +6,17 @@ load_dotenv()
 
 GURU_API = "https://api.getguru.com/api/v1"
 
-EMAIL = (os.getenv("GURU_EMAIL") or "").strip()
-TOKEN = (os.getenv("GURU_TOKEN") or "").strip()
+GURU_EMAIL = (os.getenv("GURU_EMAIL") or "").strip()
+GURU_TOKEN = (os.getenv("GURU_TOKEN") or "").strip()
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
 def guru_auth():
-    if not EMAIL:
+    if not GURU_EMAIL:
         raise SystemExit("GURU_EMAIL is not set in .env")
-    if not TOKEN:
+    if not GURU_TOKEN:
         raise SystemExit("GURU_TOKEN is not set in .env")
     
-    return (EMAIL, TOKEN)
+    return (GURU_EMAIL, GURU_TOKEN)
 
 def fetch_collections():
     url = f"{GURU_API}/collections"

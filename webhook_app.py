@@ -11,8 +11,8 @@ load_dotenv()
 app = FastAPI()
  
 # Match these names to what download_guru_export() actually uses.
-EMAIL = (os.getenv("GURU_EMAIL") or "").strip()
-TOKEN = (os.getenv("GURU_TOKEN") or "").strip()
+GURU_EMAIL = (os.getenv("GURU_EMAIL") or "").strip()
+GURU_TOKEN = (os.getenv("GURU_TOKEN") or "").strip()
  
  
 def safe_filename(name):
@@ -21,12 +21,12 @@ def safe_filename(name):
  
 
 def download_guru_export(export_url):
-    if not EMAIL or not TOKEN:
+    if not GURU_EMAIL or not GURU_TOKEN:
         raise RuntimeError(
-            "EMAIL/TOKEN not set in this service's environment"
+            "GURU_EMAIL/GURU_TOKEN not set in this service's environment"
             "download will 404. Set them in Render's Environment tab"
         )
-        
+
     # Step 1: hit Guru with auth to get the redirect URL
     r = requests.get(
         export_url,
