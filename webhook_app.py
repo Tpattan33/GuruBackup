@@ -21,7 +21,17 @@ def safe_filename(name):
  
  
 def download_guru_export(export_url):
+<<<<<<< HEAD
     # Step 1: hit Guru with auth to get the redirect URL
+=======
+    if not EMAIL or not TOKEN:
+        raise RuntimeError(
+            "EMAIL/TOKEN not set in this service's environment"
+            "download will 404. Set them in Render's Environment tab"
+        )
+
+    # Guru's exportUrl requires the same Basic auth as the rest of the API.
+>>>>>>> 68d56dac13c8367682df822995e257b984b24caa
     r = requests.get(
         export_url,
         auth=(GURU_EMAIL, GURU_TOKEN),
