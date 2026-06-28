@@ -28,15 +28,14 @@ def download_guru_export(export_url):
 
     credentials = f"{GURU_EMAIL}:{GURU_TOKEN}"
     encoded = base64.b64encode(credentials.encode()).decode()
-    headers = {"Authorization": f"Basic {encoded}"}
+    headers = {
+        "Authorization": f"Basic {encoded}",
+        "User-Agent": "curl/8.13.0",
+        "Accept": "*/*",
+    }
 
-    r = requests.get(export_url, headers=headers, allow_redirects=False)
-    print(f"[download] step1 status={r.status_code} location={r.headers.get('Location')}")
-
-    if r.status_code in (301, 302, 303, 307, 308):
-        s3_url = r.headers["Location"]
-        r = requests.get(s3_url)
-        print(f"[download] step2 status={r.status_code} content-type={r.headers.get('content-type')}")
+    r = requests.get(export_url, headers=headers, allow_redirects=True)
+    print(f"[download] status={r.status_code} url={r.url} content-type={r.headers.get('content-type')}")
 
     if not r.ok:
         raise RuntimeError(f"Guru download failed: {r.status_code} {r.text[:200]!r}")
@@ -49,6 +48,32 @@ def download_guru_export(export_url):
 @app.get("/")
 def health_check():
     return {"status": "running"}
+
+
+@app.get("/test-creds")
+def test_creds(url: str = ""):
+    """Test if Render's credentials can download a Guru export URL.
+    Usage: /test-creds?url=https://content.api.getguru.com/files/dn/YOUR-UUID
+    """
+    if not url:
+        return {"error": "Pass a ?url= parameter with a fresh exportUrl from your logs"}
+
+    credentials = f"{GURU_EMAIL}:{GURU_TOKEN}"
+    encoded = base64.b64encode(credentials.encode()).decode()
+    headers = {
+        "Authorization": f"Basic {encoded}",
+        "User-Agent": "curl/8.13.0",
+        "Accept": "*/*",
+    }
+
+    r = requests.get(url, headers=headers, allow_redirects=True)
+    return {
+        "status": r.status_code,
+        "content_type": r.headers.get("content-type"),
+        "content_length": r.headers.get("content-length"),
+        "final_url": r.url,
+        "body_preview": r.text[:200] if not r.ok else "OK - got content",
+    }
 
 
 @app.post("/trigger-exports")
