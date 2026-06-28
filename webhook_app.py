@@ -1,6 +1,7 @@
 import os
 import re
 import base64
+import time
 import requests
 from fastapi import FastAPI, Request
 from dotenv import load_dotenv
@@ -26,6 +27,9 @@ def download_guru_export(export_url):
     if not GURU_EMAIL or not GURU_TOKEN:
         raise RuntimeError("GURU_EMAIL or GURU_TOKEN is missing from Render environment variables")
 
+    print("[download] waiting 10 seconds for file to be ready...")
+    time.sleep(10)
+
     credentials = f"{GURU_EMAIL}:{GURU_TOKEN}"
     encoded = base64.b64encode(credentials.encode()).decode()
     headers = {
@@ -35,7 +39,7 @@ def download_guru_export(export_url):
     }
 
     r = requests.get(export_url, headers=headers, allow_redirects=True)
-    print(f"[download] status={r.status_code} url={r.url} content-type={r.headers.get('content-type')}")
+    print(f"[download] status={r.status_code} content-type={r.headers.get('content-type')}")
 
     if not r.ok:
         raise RuntimeError(f"Guru download failed: {r.status_code} {r.text[:200]!r}")
