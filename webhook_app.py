@@ -27,8 +27,8 @@ def download_guru_export(export_url):
     if not GURU_EMAIL or not GURU_TOKEN:
         raise RuntimeError("GURU_EMAIL or GURU_TOKEN is missing from Render environment variables")
 
-    print("[download] waiting 10 seconds for file to be ready...")
-    time.sleep(10)
+    print("[download] waiting 30 seconds for file to be ready...")
+    time.sleep(30)
 
     credentials = f"{GURU_EMAIL}:{GURU_TOKEN}"
     encoded = base64.b64encode(credentials.encode()).decode()
