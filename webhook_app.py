@@ -36,7 +36,7 @@ def download_guru_export(export_url):
     }
 
     # Retry up to 5 times with increasing delays
-    delays = [15, 30, 60, 90, 120, 120, 120]
+    delays = [30, 60, 120, 180, 240, 300]
     for attempt, delay in enumerate(delays, 1):
         print(f"[download] attempt {attempt}, waiting {delay}s...")
         time.sleep(delay)
