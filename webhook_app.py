@@ -1,91 +1,87 @@
 import os
 import re
+import base64
 import requests
 from fastapi import FastAPI, Request
 from dotenv import load_dotenv
- 
+
 from sharepoint import upload_zip_to_sharepoint
- 
+
 load_dotenv()
- 
+
 app = FastAPI()
- 
-# Match these names to what download_guru_export() actually uses.
-GURU_EMAIL = (os.getenv("GURU_EMAIL") or "").strip()
-GURU_TOKEN = (os.getenv("GURU_TOKEN") or "").strip()
- 
- 
+
+GURU_EMAIL = os.getenv("GURU_EMAIL")
+GURU_TOKEN = os.getenv("GURU_TOKEN")
+
+
 def safe_filename(name):
     name = re.sub(r'[<>:"/\\|?*]', "_", name)
     return name.strip() or "guru_export"
- 
+
 
 def download_guru_export(export_url):
     print(f"[creds] email={GURU_EMAIL!r} token_len={len(GURU_TOKEN) if GURU_TOKEN else None}")
+
     if not GURU_EMAIL or not GURU_TOKEN:
-        raise RuntimeError(
-            "GURU_EMAIL/GURU_TOKEN not set in this service's environment"
-            "download will 404. Set them in Render's Environment tab"
-        )
+        raise RuntimeError("GURU_EMAIL or GURU_TOKEN is missing from Render environment variables")
 
-    # Step 1: hit Guru with auth to get the redirect URL
-    r = requests.get(
-        export_url,
-        auth=(GURU_EMAIL, GURU_TOKEN),
-        allow_redirects=False,  # don't follow automatically
-    )
+    credentials = f"{GURU_EMAIL}:{GURU_TOKEN}"
+    encoded = base64.b64encode(credentials.encode()).decode()
+    headers = {"Authorization": f"Basic {encoded}"}
 
+    r = requests.get(export_url, headers=headers, allow_redirects=False)
     print(f"[download] step1 status={r.status_code} location={r.headers.get('Location')}")
 
-    # Step 2: if redirected, follow WITHOUT auth (S3 doesn't want it)
     if r.status_code in (301, 302, 303, 307, 308):
         s3_url = r.headers["Location"]
-        r = requests.get(s3_url)  # no auth header
+        r = requests.get(s3_url)
         print(f"[download] step2 status={r.status_code} content-type={r.headers.get('content-type')}")
 
     if not r.ok:
-        raise RuntimeError(f"Guru download failed: {r.status_code} {r.text[:200]}")
+        raise RuntimeError(f"Guru download failed: {r.status_code} {r.text[:200]!r}")
 
     return r.content
 
- 
- 
-# --- Routes (must live at module level so FastAPI registers them) ---
- 
+
+# --- Routes ---
+
 @app.get("/")
 def health_check():
     return {"status": "running"}
- 
- 
+
+
+@app.post("/trigger-exports")
+def trigger_exports():
+    """Trigger all Guru collection exports from Render's IP."""
+    from guru import fetch_collections, export_collection
+    collections = fetch_collections()
+    for c in collections:
+        export_collection(c)
+    return {"status": "triggered", "count": len(collections)}
+
+
 @app.post("/guru-webhook")
 async def guru_webhook(request: Request):
     payload = await request.json()
     print("Guru webhook payload:", payload)
- 
+
     export_url = payload.get("exportUrl")
-    # The collection name is nested under "collection" in Guru's payload.
     collection = payload.get("collection") or {}
     collection_name = collection.get("name", "guru_export")
- 
+
     if not export_url:
-        return {
-            "status": "ignored",
-            "reason": "No exportUrl found",
-            "payload": payload,
-        }
- 
+        return {"status": "ignored", "reason": "No exportUrl found"}
+
     filename = f"{safe_filename(collection_name)}.zip"
- 
-    zip_bytes = download_guru_export(export_url)
-    print(f"Downloaded {filename}: {len(zip_bytes)} bytes")
- 
-    # While SharePoint isn't finished, set SKIP_SHAREPOINT=1 in Render to
-    # confirm the webhook + Guru download work without the upload step.
+
     if os.getenv("SKIP_SHAREPOINT") == "1":
+        zip_bytes = download_guru_export(export_url)
         return {"status": "downloaded", "filename": filename, "bytes": len(zip_bytes)}
- 
+
+    zip_bytes = download_guru_export(export_url)
     result = upload_zip_to_sharepoint(filename, zip_bytes)
- 
+
     return {
         "status": "uploaded",
         "filename": filename,
