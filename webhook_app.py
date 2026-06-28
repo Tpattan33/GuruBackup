@@ -2,6 +2,7 @@ import os
 import re
 import base64
 import time
+import tempfile
 import requests
 from fastapi import FastAPI, Request
 from dotenv import load_dotenv
@@ -35,15 +36,24 @@ def download_guru_export(export_url):
         "Accept": "*/*",
     }
 
-    # Retry up to 5 times with increasing delays
     delays = [30, 60, 120, 180, 240, 300]
     for attempt, delay in enumerate(delays, 1):
         print(f"[download] attempt {attempt}, waiting {delay}s...")
         time.sleep(delay)
-        r = requests.get(export_url, headers=headers, allow_redirects=True)
-        print(f"[download] status={r.status_code} content-type={r.headers.get('content-type')}")
+
+        r = requests.get(export_url, headers=headers, allow_redirects=True, stream=True)
+        print(f"[download] status={r.status_code}")
+
         if r.ok:
-            return r.content
+            # Stream to temp file instead of loading into memory
+            tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")
+            for chunk in r.iter_content(chunk_size=8192):
+                if chunk:
+                    tmp.write(chunk)
+            tmp.close()
+            print(f"[download] saved to {tmp.name}")
+            return tmp.name  # return file path instead of bytes
+
         print(f"[download] not ready yet, will retry...")
 
     raise RuntimeError(f"Guru download failed after all retries: {r.status_code}")
@@ -105,16 +115,25 @@ async def guru_webhook(request: Request):
         return {"status": "ignored", "reason": "No exportUrl found"}
 
     filename = f"{safe_filename(collection_name)}.zip"
+    tmp_path = download_guru_export(export_url)
 
-    if os.getenv("SKIP_SHAREPOINT") == "1":
-        zip_bytes = download_guru_export(export_url)
-        return {"status": "downloaded", "filename": filename, "bytes": len(zip_bytes)}
+    try:
+        if os.getenv("SKIP_SHAREPOINT") == "1":
+            size = os.path.getsize(tmp_path)
+            return {"status": "downloaded", "filename": filename, "bytes": size}
 
-    zip_bytes = download_guru_export(export_url)
-    result = upload_zip_to_sharepoint(filename, zip_bytes)
+        with open(tmp_path, "rb") as f:
+            zip_bytes = f.read()
 
-    return {
-        "status": "uploaded",
-        "filename": filename,
-        "sharepoint_id": result.get("id") if isinstance(result, dict) else None,
-    }
+        result = upload_zip_to_sharepoint(filename, zip_bytes)
+
+        return {
+            "status": "uploaded",
+            "filename": filename,
+            "sharepoint_id": result.get("id") if isinstance(result, dict) else None,
+        }
+    finally:
+        # Always clean up the temp file
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+            print(f"[cleanup] removed {tmp_path}")
