@@ -29,3 +29,9 @@ print(r2.text[:300])
 
 # Get drive ID
 site_id = "njmqa.sharepoint.com,9066e095-d215-42da-9fdb-236660f7a746,1da66b47-41ef-47dc-acc0-a6fd1567199e"
+r3 = requests.get(
+    f"https://graph.microsoft.com/v1.0/sites/{site_id}/drives",
+    headers={"Authorization": f"Bearer {token}"}
+)
+print("Drives:", r3.status_code)
+print(r3.text[:500])
