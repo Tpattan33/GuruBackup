@@ -26,3 +26,6 @@ r2 = requests.get(
 )
 print("Site:", r2.status_code)
 print(r2.text[:300])
+
+# Get drive ID
+site_id = "njmqa.sharepoint.com,9066e095-d215-42da-9fdb-236660f7a746,1da66b47-41ef-47dc-acc0-a6fd1567199e"
